@@ -2,6 +2,8 @@
 var INACTIVE = 0;
 var ACTIVE = 1;
 var SECONDS_INACTIVE = 0.5;
+var XDEADTHRESHOLD = 0.1
+var YDEADTHRESHOLD = 0.1
 
 function loadSprite(src, callback) {
     var sprite = new Image();
@@ -15,7 +17,7 @@ JoystickView = Backbone.View.extend({
     events: {
         "touchstart": "startControl",
         "touchmove": "move",
-        "touchend": "endCotrol",
+        "touchend": "endControl",
         "mousedown": "startControl",
         "mouseup": "endControl",
         "mousemove": "move"
@@ -53,7 +55,7 @@ JoystickView = Backbone.View.extend({
         var self = this;
         setTimeout(function(){
             var currentTime = new Date().getTime();
-            if(currentTime - self.lastTouch >= SECONDS_INACTIVE * 1000){
+            if(self.state == INACTIVE && currentTime - self.lastTouch >= SECONDS_INACTIVE * 1000){
                 self._retractToMiddle();
                 self.renderSprite();
             }
@@ -71,8 +73,8 @@ JoystickView = Backbone.View.extend({
     },
     endControl: function(evt){
         this.state = INACTIVE;
-        this.x = 0;
-        this.y = 0;
+        //this.x = 0;
+        //this.y = 0;
         this.renderSprite();
     },
     move: function(evt){
@@ -112,8 +114,13 @@ JoystickView = Backbone.View.extend({
         if(Math.abs(yPercent) > 1.0){
             yPercent /= Math.abs(yPercent);
         }
+        if (xPercent <= XDEADTHRESHOLD && xPercent >= -XDEADTHRESHOLD)
+            xPercent = 0;
+        if (yPercent <= YDEADTHRESHOLD && yPercent >= -YDEADTHRESHOLD)
+            yPercent = 0;
         this.trigger("horizontalMove", xPercent);
         this.trigger("verticalMove", yPercent);
+        this.trigger("joystickMove", xPercent, yPercent);
     },
     _mutateToCartesian: function(x, y){
         x -= (this.squareSize) / 2;
@@ -146,6 +153,7 @@ JoystickView = Backbone.View.extend({
 
         this.x = Math.floor(toKeep * Math.abs(this.x)) * xSign;
         this.y = Math.floor(toKeep * Math.abs(this.y)) * ySign;
+        this._triggerChange();
     },
     _traceNewValues: function(){
         var slope = this.y / this.x;
@@ -181,8 +189,8 @@ JoystickView = Backbone.View.extend({
         var originalWidth = 89;
         var originalHeight = 89;
 
-        var spriteWidth = 50;
-        var spriteHeight = 50;
+        var spriteWidth = this.squareSize / 3;
+        var spriteHeight = this.squareSize / 3;
         var pixelsLeft = 0; //ofset for sprite on img
         var pixelsTop = 0; //offset for sprite on img
         var coords = this._cartesianToCanvas(this.x, this.y);

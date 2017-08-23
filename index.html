@@ -28,10 +28,10 @@
                 }, 0);
             });
             joystickView.bind("verticalMove", function(y){
-                $("#yVal").html(y);
+                $("#yVal").html(Math.floor(y*1000)/1000);
             });
             joystickView.bind("horizontalMove", function(x){
-                $("#xVal").html(x);
+                $("#xVal").html(Math.floor(x*1000)/1000);
             });
         });
     </script>
